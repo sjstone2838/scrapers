@@ -15,37 +15,40 @@ def write_player_data(player_id):
                            "Make sure to add retries to code!""" % r.url)
 
     bs = BeautifulSoup(r.text, 'html.parser')
+
+    draft_history = bs.find(string='Drafted').find_parent('p').text
+
     for data_type in DATA_TYPES:
         table = bs.find(id=data_type)
 
         # TODO: If no table, player probably didn't sign?
         # Ask Steven how to handle this situation
         if table:
-            data = extract_table(table, player_id)
-            df = pd.DataFrame(data)
-            df.to_csv(data_type + '.csv', mode='a', header=False)
+            header, data = extract_table(table, player_id, draft_history)
+            df = pd.DataFrame(data, columns=header)
+            df.to_csv(data_type + '.csv', mode='a', header=True)
 
-def extract_table(table, player_id):
+def extract_table(table, player_id, draft_history):
     # Return header (th) and data (td) from an html table.
-    # header = [th.text for th in table.thead.find_all('th')]
-    # header.insert(0, 'player_id')
+    header = [th.text for th in table.thead.find_all('th')]
+    header.insert(0, 'draft_history')
+    header.insert(0, 'player_id')
     data = []
     for tr in table.tbody.find_all('tr'):
-        record = [player_id]
+        record = [player_id, draft_history]
         tds = tr.find_all('td')
         for td in tds:
             record.append(td.text.encode('utf-8').strip())
         data.append(record)
-    # return header, data
-    return data
+    return header, data
 
 
 start_time = datetime.datetime.now()
 
 draftees = pd.read_csv('draftees.csv').values.tolist()
 
-for draftee in draftees[5:10]:
-    player_id = draftee[3]
+for draftee in draftees[100:]:
+    player_id = draftee[1]
     write_player_data(player_id)
     end_time = datetime.datetime.now()
     delta = end_time - start_time

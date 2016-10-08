@@ -4,6 +4,7 @@ import pandas as pd
 
 # Ignore INF (Infielder); only 3 in 1990 and none after
 POSITIONS = ['P', 'C', 'SS', 'OF', '1B', '2B', '3B']
+# POSITIONS = ['P', 'C', 'SS']
 
 def write_players_by_year(year):
     for position in POSITIONS:
@@ -24,18 +25,35 @@ def write_players_by_position(year, position):
 
     table = bs.find(id='draft_stats')
 
-    players = []
+    header = [th.text for th in table.thead.find_all('th')]
+    header.insert(0, 'player_link')
+    if position != 'P' and position != 'OF':
+        header.insert(10, 'position')
 
-    for a in table.find_all('a'):
+    data = []
+    for tr in table.tbody.find_all('tr'):
+        player_link = get_player_link(tr)
+        record = [player_link]
+
+        tds = tr.find_all('td')
+        for td in tds:
+            record.append(td.text.encode('utf-8').strip())
+
+        if position != 'P' and position != 'OF':
+            record.insert(10, position)
+
+        data.append(record)
+
+    df = pd.DataFrame(data, columns=header)
+    df.to_csv('draftees.csv', mode='a', header=True)
+    print "Wrote {} from {}".format(position, year)
+
+def get_player_link(row):
+    for a in row.find_all('a'):
         link = a.get('href')
         if link[0:23] == '/register/player.cgi?id':
-            players.append([year, position, link])
+            return link
+    return ''
 
-    # print len(links)
-    # print links
-
-    df = pd.DataFrame(players, columns=['Year', 'Position', 'Link'])
-    df.to_csv('draftees.csv', mode='a', header=True)
-
-for year in range(1990, 1991):
+for year in range(1990, 1992):
     write_players_by_year(year)
