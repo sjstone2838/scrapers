@@ -4,7 +4,6 @@ import pandas as pd
 
 # Ignore INF (Infielder); only 3 in 1990 and none after
 POSITIONS = ['P', 'C', 'SS', 'OF', '1B', '2B', '3B']
-# POSITIONS = ['P', 'C', 'SS']
 
 def write_players_by_year(year):
     for position in POSITIONS:
@@ -19,7 +18,9 @@ def write_players_by_position(year, position):
 
     r = requests.get(url)
     if not r.ok:
-        raise RuntimeError('Error connecting to %s' % r.url)
+        r = requests.get(url)
+        if not r.ok:
+            raise RuntimeError('Error connecting to %s' % r.url)
 
     bs = BeautifulSoup(r.text, 'html.parser')
 
@@ -55,5 +56,5 @@ def get_player_link(row):
             return link
     return ''
 
-for year in range(1990, 1992):
+for year in range(1990, 2016):
     write_players_by_year(year)

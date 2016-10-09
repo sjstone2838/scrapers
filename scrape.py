@@ -11,8 +11,13 @@ def write_player_data(player_id):
     # Append player data to CSV.
     r = requests.get(URL + player_id)
     if not r.ok:
-        raise RuntimeError("""Error connecting to %s;
-                           "Make sure to add retries to code!""" % r.url)
+        # Try again
+        r = requests.get(URL + player_id)
+        if not r.ok:
+            # Log the error to csv and go to next player_id
+            df = pd.DataFrame([player_id])
+            df.to_csv('errors.csv', mode='a', header=False)
+            return
 
     bs = BeautifulSoup(r.text, 'html.parser')
 
@@ -47,7 +52,7 @@ start_time = datetime.datetime.now()
 
 draftees = pd.read_csv('draftees.csv').values.tolist()
 
-for draftee in draftees[100:]:
+for draftee in draftees:
     player_id = draftee[1]
     write_player_data(player_id)
     end_time = datetime.datetime.now()
